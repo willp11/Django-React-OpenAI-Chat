@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 
 const chatStream = async (message: string, onChunk: (content: string) => void, onComplete: () => void, onError: (error: string) => void) => {
   try {
@@ -14,7 +14,6 @@ const chatStream = async (message: string, onChunk: (content: string) => void, o
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    // For SSE, we need to read the response as text, not as a ReadableStream
     const reader = response.body?.getReader()
     if (!reader) {
       throw new Error('No reader available')
@@ -28,13 +27,11 @@ const chatStream = async (message: string, onChunk: (content: string) => void, o
       
       if (done) break
       
-      // Decode the chunk and add to buffer
       const chunk = decoder.decode(value, { stream: true })
       buffer += chunk
-      
-      // Process complete lines from the buffer
+
       const lines = buffer.split('\n')
-      buffer = lines.pop() || '' // Keep incomplete line in buffer
+      buffer = lines.pop() || ''
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
@@ -65,7 +62,6 @@ function App() {
   const [message, setMessage] = useState<string>('')
   const [chatData, setChatData] = useState<string>('')
   const [isStreaming, setIsStreaming] = useState<boolean>(false)
-  const abortControllerRef = useRef<AbortController | null>(null)
 
   const handleChat = async () => {
     setChatData('')
@@ -87,13 +83,6 @@ function App() {
     )
   }
 
-  const handleStopStream = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-      setIsStreaming(false)
-    }
-  }
-
   return (
     <div className="flex flex-col items-center h-screen gap-4 p-4 w-full max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold">Chat with AI</h1>
@@ -113,14 +102,6 @@ function App() {
           >
             {isStreaming ? 'Streaming...' : 'Start Chat'}
           </button>
-          {isStreaming && (
-            <button 
-              className="px-4 py-2 rounded-md text-white bg-red-500 hover:bg-red-600"
-              onClick={handleStopStream}
-            >
-              Stop
-            </button>
-          )}
         </div>
         <div className="w-full min-h-32 border-2 border-gray-300 rounded-md p-2 bg-gray-50">
           {chatData ? (

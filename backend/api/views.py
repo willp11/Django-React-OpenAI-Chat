@@ -34,16 +34,11 @@ def chat_stream_view(request):
     def event_stream():
         try:
             for chunk in chat_with_openai_stream(message):
-                if chunk['type'] == 'content':
-                    yield f"data: {json.dumps(chunk)}\n\n"
-                elif chunk['type'] == 'done':
-                    yield f"data: {json.dumps(chunk)}\n\n"
-                elif chunk['type'] == 'error':
-                    yield f"data: {json.dumps(chunk)}\n\n"
+                yield f"data: {json.dumps(chunk)}\n\n"
         except Exception as e:
             error_chunk = {'type': 'error', 'error': str(e)}
             yield f"data: {json.dumps(error_chunk)}\n\n"
-    
+
     response = StreamingHttpResponse(
         event_stream(),
         content_type='text/event-stream'
