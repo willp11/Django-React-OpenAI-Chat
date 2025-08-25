@@ -80,6 +80,7 @@ function App() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [chatData, setChatData] = useState<{message: string, content: string}[]>([])
   const [isStreaming, setIsStreaming] = useState<boolean>(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false)
 
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -93,16 +94,16 @@ function App() {
   const focusInput = () => {
     if (inputRef.current) {
       inputRef.current.focus()
-      console.log('focused')
     }
   }
 
   const handleCreateChat = async () => {
     const data = await createChat()
-    const new_chats = [...chats, data.chat_id]
+    const new_chats = [data.chat_id, ...chats]
     localStorage.setItem('chats', JSON.stringify(new_chats))
     setCurrentChatId(data.chat_id)
     setChats(new_chats)
+    focusInput()
   }
 
   const handleChat = async () => {
@@ -144,6 +145,14 @@ function App() {
     }
   }
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen)
+  }
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false)
+  }
+
   useEffect(() => {
     const chats = JSON.parse(localStorage.getItem('chats') || '[]')
     setChats(chats)
@@ -174,27 +183,78 @@ function App() {
     }
   }, [isStreaming, question])
 
+  const numberOfChats = chats.length
+
   return (
-    <div className="flex flex-col h-screen p-4 gap-4 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-center">Chat with AI</h1>
-      
-      <div className="flex gap-4 flex-1 min-h-0">
-        {/* Left sidebar - Chat selection */}
-        <div className="flex flex-col gap-2 w-48 flex-shrink-0">
-          <button className="px-4 py-2 rounded-md text-white bg-blue-500 hover:bg-blue-600 cursor-pointer" onClick={handleCreateChat}>New Chat</button>
-          <div className="flex flex-col gap-2 overflow-y-auto">
-            {chats.map((chat_id: string) => (
-              <button key={chat_id} onClick={() => {
-                setCurrentChatId(chat_id)
-                focusInput()
-              }} className={`px-4 py-2 rounded-md border-2 border-gray-300 cursor-pointer hover:bg-gray-100 ${currentChatId === chat_id ? 'bg-gray-100' : ''}`}>Chat {chat_id}</button>
-            ))}
+    <div className="flex flex-col h-screen">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={toggleSidebar}
+            className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+            aria-label="Toggle menu"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <h1 className="text-2xl font-bold">Chat with AI</h1>
+        </div>
+      </div>
+
+      <div className="flex flex-1 min-h-0 relative">
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-opacity-50 z-40 lg:hidden"
+            onClick={closeSidebar}
+          />
+        )}
+
+        <div className={`
+          fixed lg:static inset-y-0 left-0 z-50
+          w-64 bg-white border-r border-gray-200
+          transform transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
+          <div className="flex flex-col h-full p-4 gap-4">
+            <div className="flex items-center justify-between lg:hidden">
+              <h2 className="text-lg font-semibold">Chats</h2>
+              <button 
+                onClick={closeSidebar}
+                className="p-2 rounded-md hover:bg-gray-100"
+                aria-label="Close menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <button 
+              className="px-4 py-2 rounded-md text-white bg-blue-500 hover:bg-blue-600 cursor-pointer" 
+              onClick={handleCreateChat}
+            >
+              New Chat
+            </button>
+
+            <div className="flex flex-col gap-2 overflow-y-auto flex-1">
+              {chats.map((chat_id: string, index: number) => (
+                <button 
+                  key={chat_id} 
+                  onClick={() => {
+                    setCurrentChatId(chat_id)
+                    closeSidebar()
+                  }} 
+                  className={`px-4 py-2 rounded-md border-2 border-gray-300 cursor-pointer hover:bg-gray-100 text-left ${currentChatId === chat_id ? 'bg-gray-100' : ''}`}
+                >
+                  Chat {numberOfChats - index}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-        
-        {/* Right side - Chat area and input */}
-        <div className="flex flex-col gap-4 flex-1 min-h-0">
-          {/* Chat messages area - grows to fill available space */}
+
+        <div className="flex flex-col gap-4 flex-1 min-h-0 p-4 max-w-6xl mx-auto">
           <div
             className="flex-1 border-2 border-gray-300 rounded-md p-4 bg-gray-50 overflow-y-auto min-h-0"
             ref={chatContainerRef}
@@ -212,8 +272,7 @@ function App() {
               <div className="text-gray-500">AI response will appear here...</div>
             )}
           </div>
-          
-          {/* Input area - fixed height */}
+
           <div className="flex flex-col gap-2 flex-shrink-0">
             <input 
               className="border-2 border-gray-300 rounded-md p-2 w-full" 
@@ -231,7 +290,7 @@ function App() {
             />
             <div className="flex gap-2">
               <button 
-                className={`px-4 py-2 w-full rounded-md text-white ${isStreaming ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600 cursor-pointer'}`}
+                className={`px-4 py-2 rounded-md text-white ${isStreaming ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600 cursor-pointer'}`}
                 onClick={handleSend}
                 disabled={isStreaming || !question.trim()}
               >
