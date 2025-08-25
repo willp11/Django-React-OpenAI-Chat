@@ -82,7 +82,7 @@ function App() {
   const [isStreaming, setIsStreaming] = useState<boolean>(false)
 
   const chatContainerRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -90,9 +90,9 @@ function App() {
     }
   }
 
-  const focusTextarea = () => {
-    if (textareaRef.current) {
-      textareaRef.current.focus()
+  const focusInput = () => {
+    if (inputRef.current) {
+      inputRef.current.focus()
       console.log('focused')
     }
   }
@@ -170,59 +170,75 @@ function App() {
 
   useEffect(() => {
     if (!isStreaming && question === '') {
-      setTimeout(focusTextarea, 50)
+      setTimeout(focusInput, 50)
     }
   }, [isStreaming, question])
 
   return (
-    <div className="flex flex-col items-center h-screen gap-4 p-4 w-full max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold">Chat with AI</h1>
-      <button className="px-4 py-2 rounded-md text-white bg-blue-500 hover:bg-blue-600 cursor-pointer" onClick={handleCreateChat}>Create Chat</button>
-      <div className="flex flex-col gap-2">
-        {chats.map((chat_id: string) => (
-          <button key={chat_id} onClick={() => setCurrentChatId(chat_id)} className={`px-4 py-2 rounded-md border-2 border-gray-300 cursor-pointer hover:bg-gray-100 ${currentChatId === chat_id ? 'bg-gray-100' : ''}`}>Chat {chat_id}</button>
-        ))}
-      </div>
-      <div className="flex flex-col items-center gap-2 w-full">
-       <div
-        className="w-full min-h-32 border-2 border-gray-300 rounded-md p-2 bg-gray-50 max-h-[500px] overflow-y-auto"
-        ref={chatContainerRef}
-        >
-          {chatData ? (
-            <div className="flex flex-col gap-2">
-              {chatData.map((message) => (
-                <div className="flex flex-col gap-2" key={message.message}>
-                  <div className="font-bold">{message.message}</div>
-                  <div className="whitespace-pre-wrap bg-gray-100 p-4 rounded-md">{message.content}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-gray-500">AI response will appear here...</div>
-          )}
+    <div className="flex flex-col h-screen p-4 gap-4 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold text-center">Chat with AI</h1>
+      
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* Left sidebar - Chat selection */}
+        <div className="flex flex-col gap-2 w-48 flex-shrink-0">
+          <button className="px-4 py-2 rounded-md text-white bg-blue-500 hover:bg-blue-600 cursor-pointer" onClick={handleCreateChat}>New Chat</button>
+          <div className="flex flex-col gap-2 overflow-y-auto">
+            {chats.map((chat_id: string) => (
+              <button key={chat_id} onClick={() => {
+                setCurrentChatId(chat_id)
+                focusInput()
+              }} className={`px-4 py-2 rounded-md border-2 border-gray-300 cursor-pointer hover:bg-gray-100 ${currentChatId === chat_id ? 'bg-gray-100' : ''}`}>Chat {chat_id}</button>
+            ))}
+          </div>
         </div>
-        <textarea 
-          className="border-2 border-gray-300 rounded-md p-2 w-full h-24" 
-          value={question} 
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              handleSend()
-            }
-          }}
-          placeholder="Type your message here..."
-          disabled={isStreaming}
-          ref={textareaRef}
-        />
-        <div className="flex gap-2">
-          <button 
-            className={`px-4 py-2 rounded-md text-white ${isStreaming ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600 cursor-pointer'}`}
-            onClick={handleSend}
-            disabled={isStreaming || !question.trim()}
+        
+        {/* Right side - Chat area and input */}
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
+          {/* Chat messages area - grows to fill available space */}
+          <div
+            className="flex-1 border-2 border-gray-300 rounded-md p-4 bg-gray-50 overflow-y-auto min-h-0"
+            ref={chatContainerRef}
           >
-            {isStreaming ? 'Streaming...' : 'Send'}
-          </button>
+            {chatData ? (
+              <div className="flex flex-col gap-4">
+                {chatData.map((message) => (
+                  <div className="flex flex-col gap-2" key={message.message}>
+                    <div className="font-bold">{message.message}</div>
+                    <div className="whitespace-pre-wrap bg-gray-100 p-4 rounded-md">{message.content}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-gray-500">AI response will appear here...</div>
+            )}
+          </div>
+          
+          {/* Input area - fixed height */}
+          <div className="flex flex-col gap-2 flex-shrink-0">
+            <input 
+              className="border-2 border-gray-300 rounded-md p-2 w-full" 
+              value={question} 
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSend()
+                }
+              }}
+              placeholder="Type your message here..."
+              disabled={isStreaming}
+              ref={inputRef}
+            />
+            <div className="flex gap-2">
+              <button 
+                className={`px-4 py-2 w-full rounded-md text-white ${isStreaming ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600 cursor-pointer'}`}
+                onClick={handleSend}
+                disabled={isStreaming || !question.trim()}
+              >
+                {isStreaming ? 'Streaming...' : 'Send'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
