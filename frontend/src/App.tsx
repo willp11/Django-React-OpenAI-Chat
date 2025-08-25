@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const createChat = async (): Promise<{chat_id: string}> => {
   const response = await fetch('api/create-chat/', {
@@ -75,14 +75,27 @@ const getChatMessages = async (chat_id: string): Promise<{message: string, conte
 }
 
 function App() {
-  const [message, setMessage] = useState<string>('')
-
-  // TODO: Chat data should be a list of messages - message is from user, content is from AI
-  const [chatData, setChatData] = useState<{message: string, content: string}[]>([])
-  const [isStreaming, setIsStreaming] = useState<boolean>(false)
+  const [question, setQuestion] = useState<string>('')
   const [chats, setChats] = useState<string[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
+  const [chatData, setChatData] = useState<{message: string, content: string}[]>([])
+  const [isStreaming, setIsStreaming] = useState<boolean>(false)
 
+  const chatContainerRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+    }
+  }
+
+  const focusTextarea = () => {
+    if (textareaRef.current) {
+      textareaRef.current.focus()
+      console.log('focused')
+    }
+  }
 
   const handleCreateChat = async () => {
     const data = await createChat()
@@ -93,7 +106,7 @@ function App() {
   }
 
   const handleChat = async () => {
-    setChatData(prev => [...prev, {message: message, content: ''}])
+    setChatData(prev => [...prev, {message: question, content: ''}])
 
     setIsStreaming(true)
     if (!currentChatId) {
@@ -105,7 +118,7 @@ function App() {
     
     await chatStream(
       currentChatId,
-      message,
+      question,
       (content) => {
         currentMessage += content
         setChatData(currentChatData => {
@@ -124,6 +137,13 @@ function App() {
     )
   }
 
+  const handleSend = () => {
+    if (question.trim() && !isStreaming) {
+      handleChat()
+      setQuestion('')
+    }
+  }
+
   useEffect(() => {
     const chats = JSON.parse(localStorage.getItem('chats') || '[]')
     setChats(chats)
@@ -138,6 +158,22 @@ function App() {
     }
   }, [currentChatId])
 
+  useEffect(() => {
+    scrollToBottom()
+  }, [chatData])
+
+  useEffect(() => {
+    if (isStreaming) {
+      scrollToBottom()
+    }
+  }, [isStreaming])
+
+  useEffect(() => {
+    if (!isStreaming && question === '') {
+      setTimeout(focusTextarea, 50)
+    }
+  }, [isStreaming, question])
+
   return (
     <div className="flex flex-col items-center h-screen gap-4 p-4 w-full max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold">Chat with AI</h1>
@@ -148,31 +184,10 @@ function App() {
         ))}
       </div>
       <div className="flex flex-col items-center gap-2 w-full">
-        <textarea 
-          className="border-2 border-gray-300 rounded-md p-2 w-full h-24" 
-          value={message} 
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              if (message.trim() && !isStreaming) {
-                handleChat()
-              }
-            }
-          }}
-          placeholder="Type your message here..."
-          disabled={isStreaming}
-        />
-        <div className="flex gap-2">
-          <button 
-            className={`px-4 py-2 rounded-md text-white ${isStreaming ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600 cursor-pointer'}`}
-            onClick={handleChat}
-            disabled={isStreaming || !message.trim()}
-          >
-            {isStreaming ? 'Streaming...' : 'Start Chat'}
-          </button>
-        </div>
-        <div className="w-full min-h-32 border-2 border-gray-300 rounded-md p-2 bg-gray-50">
+       <div
+        className="w-full min-h-32 border-2 border-gray-300 rounded-md p-2 bg-gray-50 max-h-[500px] overflow-y-auto"
+        ref={chatContainerRef}
+        >
           {chatData ? (
             <div className="flex flex-col gap-2">
               {chatData.map((message) => (
@@ -185,6 +200,29 @@ function App() {
           ) : (
             <div className="text-gray-500">AI response will appear here...</div>
           )}
+        </div>
+        <textarea 
+          className="border-2 border-gray-300 rounded-md p-2 w-full h-24" 
+          value={question} 
+          onChange={(e) => setQuestion(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSend()
+            }
+          }}
+          placeholder="Type your message here..."
+          disabled={isStreaming}
+          ref={textareaRef}
+        />
+        <div className="flex gap-2">
+          <button 
+            className={`px-4 py-2 rounded-md text-white ${isStreaming ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600 cursor-pointer'}`}
+            onClick={handleSend}
+            disabled={isStreaming || !question.trim()}
+          >
+            {isStreaming ? 'Streaming...' : 'Send'}
+          </button>
         </div>
       </div>
     </div>
