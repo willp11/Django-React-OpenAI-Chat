@@ -5,5 +5,5 @@ app_name = 'api'
 
 urlpatterns = [
     path('create-chat/', views.create_chat, name='create-chat'),
-    path('chat-stream/', views.chat_stream, name='chat-stream'),
+    path('chat-stream/<str:chat_id>/', views.chat_stream, name='chat-stream'),
 ]

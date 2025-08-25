@@ -13,9 +13,10 @@ def create_chat(request):
 
 
 @api_view(['POST'])
-def chat_stream(request):
+def chat_stream(request, chat_id):
     """Streaming chat endpoint using Server-Sent Events"""
     message = request.data.get('message')
+    chat = Chat.objects.get(id=chat_id)
     
     if not message:
         return Response(
@@ -23,10 +24,13 @@ def chat_stream(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
+    content = ""
+    
     def event_stream():
         try:
             for chunk in chat_with_openai_stream(message):
                 yield f"data: {json.dumps(chunk)}\n\n"
+                content += chunk['content']
         except Exception as e:
             error_chunk = {'type': 'error', 'error': str(e)}
             yield f"data: {json.dumps(error_chunk)}\n\n"
@@ -37,4 +41,5 @@ def chat_stream(request):
     )
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
+    ChatMessage.objects.create(chat=chat, message=message, content=content)
     return response
