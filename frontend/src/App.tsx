@@ -87,10 +87,18 @@ function App() {
     <div className="flex flex-col items-center h-screen gap-4 p-4 w-full max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold">Chat with AI</h1>
       <div className="flex flex-col items-center gap-2 w-full">
-      <textarea 
+        <textarea 
           className="border-2 border-gray-300 rounded-md p-2 w-full h-24" 
           value={message} 
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              if (message.trim() && !isStreaming) {
+                handleChat()
+              }
+            }
+          }}
           placeholder="Type your message here..."
           disabled={isStreaming}
         />
