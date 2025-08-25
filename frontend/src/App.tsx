@@ -244,6 +244,7 @@ function App() {
                   onClick={() => {
                     setCurrentChatId(chat_id)
                     closeSidebar()
+                    focusInput()
                   }} 
                   className={`px-4 py-2 rounded-md border-2 border-gray-300 cursor-pointer hover:bg-gray-100 text-left ${currentChatId === chat_id ? 'bg-gray-100' : ''}`}
                 >
