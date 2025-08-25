@@ -9,6 +9,18 @@ const testFetch = async (): Promise<{message: string}> => {
   return data
 }
 
+const chatFetch = async (message: string): Promise<{reply: string}> => {
+  const response = await fetch('api/chat/', {
+    method: 'POST',
+    body: JSON.stringify({message}),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  const data = await response.json()
+  return data
+}
+
 function App() {
   const [count, setCount] = useState(0)
   const [data, setData] = useState<string | null>(null)
@@ -16,6 +28,11 @@ function App() {
   const handleClick = async () => {
     const data = await testFetch()
     setData(data.message)
+  }
+
+  const handleChat = async () => {
+    const data = await chatFetch('Hello, how are you?')
+    console.log(data)
   }
 
   return (
@@ -44,6 +61,9 @@ function App() {
         Test Fetch
       </button>
       <p>{data}</p>
+      <button className="bg-blue-500 text-white p-2 rounded-md" onClick={handleChat}>
+        Chat Fetch
+      </button>
     </div>
   )
 }

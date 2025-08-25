@@ -19,6 +19,8 @@ services:
   backend:
     build: ./backend
     container_name: backend
+    env_file:
+      - ./backend/.env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings
       DATABASE_URL: postgresql://user:password@postgres:5432/project
