@@ -1,27 +1,19 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from chat.utils import chat_with_openai, chat_with_openai_stream
+from chat.utils import chat_with_openai_stream
 from rest_framework import status
 from django.http import StreamingHttpResponse
+from api.models import Chat, ChatMessage
 import json
 
-@api_view(['GET'])
-def test_view(request):
-    return Response({'message': 'Hello, World!'})
+@api_view(['POST'])
+def create_chat(request):
+    chat = Chat.objects.create()
+    return Response(data={'chat_id': chat.id})
 
 
 @api_view(['POST'])
-def chat_view(request):
-    message = request.data.get('message')
-    response = chat_with_openai(message)
-    if response['success']:
-        return Response(data={'reply': response['reply']})
-    else:
-        return Response(data={'error': response['error']}, status=500)
-
-
-@api_view(['POST'])
-def chat_stream_view(request):
+def chat_stream(request):
     """Streaming chat endpoint using Server-Sent Events"""
     message = request.data.get('message')
     

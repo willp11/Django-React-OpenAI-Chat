@@ -26,6 +26,8 @@ services:
       DATABASE_URL: postgresql://user:password@postgres:5432/project
     volumes:
       - ./backend:/app
+      - /app/venv
+      - /app/__pycache__
     ports:
       - "8000:8000"
     depends_on:

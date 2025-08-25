@@ -4,7 +4,6 @@ from api import views
 app_name = 'api'
 
 urlpatterns = [
-    path('test/', views.test_view, name='test'),
-    path('chat/', views.chat_view, name='chat'),
-    path('chat-stream/', views.chat_stream_view, name='chat-stream'),
+    path('create-chat/', views.create_chat, name='create-chat'),
+    path('chat-stream/', views.chat_stream, name='chat-stream'),
 ]
