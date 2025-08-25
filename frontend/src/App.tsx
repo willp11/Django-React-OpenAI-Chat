@@ -66,9 +66,19 @@ const chatStream = async (chat_id: string, message: string, onChunk: (content: s
   }
 }
 
+const getChatMessages = async (chat_id: string): Promise<{message: string, content: string}[]> => {
+  const response = await fetch(`api/chat-messages/${chat_id}/`, {
+    method: 'GET',
+  })
+  const data = await response.json()
+  return data
+}
+
 function App() {
   const [message, setMessage] = useState<string>('')
-  const [chatData, setChatData] = useState<string>('')
+
+  // TODO: Chat data should be a list of messages - message is from user, content is from AI
+  const [chatData, setChatData] = useState<{message: string, content: string}[]>([])
   const [isStreaming, setIsStreaming] = useState<boolean>(false)
   const [chats, setChats] = useState<string[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
@@ -83,18 +93,26 @@ function App() {
   }
 
   const handleChat = async () => {
-    setChatData('')
+    setChatData(prev => [...prev, {message: message, content: ''}])
+
     setIsStreaming(true)
     if (!currentChatId) {
       return
     }
+
+    const currentMessageIndex = chatData.length
+    let currentMessage = ''
     
     await chatStream(
       currentChatId,
       message,
       (content) => {
-        console.log(content)
-        setChatData(prev => prev + content)
+        currentMessage += content
+        setChatData(currentChatData => {
+          const newChatData = [...currentChatData]
+          newChatData[currentMessageIndex].content = currentMessage
+          return newChatData
+        })
       },
       () => {
         setIsStreaming(false)
@@ -111,6 +129,14 @@ function App() {
     setChats(chats)
     setCurrentChatId(chats[0])
   }, [])
+
+  useEffect(() => {
+    if (currentChatId) {
+      getChatMessages(currentChatId).then((data) => {
+        setChatData(data)
+      })
+    }
+  }, [currentChatId])
 
   return (
     <div className="flex flex-col items-center h-screen gap-4 p-4 w-full max-w-2xl mx-auto">
@@ -148,7 +174,14 @@ function App() {
         </div>
         <div className="w-full min-h-32 border-2 border-gray-300 rounded-md p-2 bg-gray-50">
           {chatData ? (
-            <div className="whitespace-pre-wrap">{chatData}</div>
+            <div className="flex flex-col gap-2">
+              {chatData.map((message) => (
+                <div className="flex flex-col gap-2" key={message.message}>
+                  <div className="font-bold">{message.message}</div>
+                  <div className="whitespace-pre-wrap bg-gray-100 p-4 rounded-md">{message.content}</div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="text-gray-500">AI response will appear here...</div>
           )}

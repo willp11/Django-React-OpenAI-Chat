@@ -12,25 +12,39 @@ def create_chat(request):
     return Response(data={'chat_id': chat.id})
 
 
+@api_view(['GET'])
+def get_chat_messages(request, chat_id):
+    chat = Chat.objects.get(id=chat_id)
+    messages = ChatMessage.objects.filter(chat=chat)
+    return Response(data=[{'message': message.message, 'content': message.content} for message in messages])
+
+
 @api_view(['POST'])
 def chat_stream(request, chat_id):
     """Streaming chat endpoint using Server-Sent Events"""
-    message = request.data.get('message')
+    message_text = request.data.get('message')
     chat = Chat.objects.get(id=chat_id)
-    
-    if not message:
+    chat_message = ChatMessage.objects.create(chat=chat, content='', message=message_text)
+
+    if not message_text:
         return Response(
             {'error': 'Message is required'}, 
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    content = ""
-    
     def event_stream():
+        content_parts = []  # Use a list to collect content
         try:
-            for chunk in chat_with_openai_stream(message):
+            for chunk in chat_with_openai_stream(message_text):
+                if chunk['type'] == 'content':
+                    content_parts.append(chunk['content'])  # Collect each piece
                 yield f"data: {json.dumps(chunk)}\n\n"
-                content += chunk['content']
+            
+            # After streaming is complete, save the full content
+            full_content = ''.join(content_parts)
+            chat_message.content = full_content
+            chat_message.save()
+            
         except Exception as e:
             error_chunk = {'type': 'error', 'error': str(e)}
             yield f"data: {json.dumps(error_chunk)}\n\n"
@@ -41,5 +55,4 @@ def chat_stream(request, chat_id):
     )
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
-    ChatMessage.objects.create(chat=chat, message=message, content=content)
     return response
