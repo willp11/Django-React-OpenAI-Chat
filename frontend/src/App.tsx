@@ -257,20 +257,18 @@ function App() {
 
         <div className="flex flex-col gap-4 flex-1 min-h-0 p-4 max-w-6xl mx-auto">
           <div
-            className="flex-1 border-2 border-gray-300 rounded-md p-4 bg-gray-50 overflow-y-auto min-h-0"
+            className="flex-1 border-2 border-gray-300 rounded-md p-4 overflow-y-auto min-h-0"
             ref={chatContainerRef}
           >
-            {chatData ? (
+            {chatData && (
               <div className="flex flex-col gap-4">
                 {chatData.map((message) => (
                   <div className="flex flex-col gap-2" key={message.message}>
                     <div className="font-bold">{message.message}</div>
-                    <div className="whitespace-pre-wrap bg-gray-100 p-4 rounded-md">{message.content}</div>
+                    {message.content && <div className="whitespace-pre-wrap bg-gray-100 p-4 rounded-md">{message.content}</div>}
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-gray-500">AI response will appear here...</div>
             )}
           </div>
 
@@ -295,7 +293,7 @@ function App() {
                 onClick={handleSend}
                 disabled={isStreaming || !question.trim()}
               >
-                {isStreaming ? 'Streaming...' : 'Send'}
+                {isStreaming ? 'Loading...' : 'Send'}
               </button>
             </div>
           </div>
