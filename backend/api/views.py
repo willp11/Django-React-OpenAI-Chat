@@ -10,7 +10,8 @@ def test_view(request):
 @api_view(['POST'])
 def chat_view(request):
     message = request.data.get('message')
-    print(message)
     response = chat_with_openai(message)
-    print(response)
-    return Response(data=response)
+    if response['success']:
+        return Response(data={'reply': response['reply']})
+    else:
+        return Response(data={'error': response['error']}, status=500)
