@@ -33,14 +33,13 @@ def chat_stream(request, chat_id):
         )
     
     def event_stream():
-        content_parts = []  # Use a list to collect content
+        content_parts = []
         try:
             for chunk in chat_with_openai_stream(message_text):
                 if chunk['type'] == 'content':
-                    content_parts.append(chunk['content'])  # Collect each piece
+                    content_parts.append(chunk['content'])
                 yield f"data: {json.dumps(chunk)}\n\n"
             
-            # After streaming is complete, save the full content
             full_content = ''.join(content_parts)
             chat_message.content = full_content
             chat_message.save()
