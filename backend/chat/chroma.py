@@ -1,6 +1,5 @@
 from chromadb.utils import embedding_functions
 from django.conf import settings
-from chat.client import create_openai_client
 
 import chromadb
 import tiktoken
@@ -38,7 +37,7 @@ def load_documents(documents: list[str]):
             )
 
 
-def query_rag(question, k=3):
+def create_rag_prompt(question, k=3):
     results = collection.query(
         query_texts=[question],
         n_results=k
@@ -53,11 +52,4 @@ def query_rag(question, k=3):
     Answer: reply to the question based on the context.
     """
 
-    client = create_openai_client()
-
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=1000
-    )
-    return response.choices[0].message.content
+    return prompt

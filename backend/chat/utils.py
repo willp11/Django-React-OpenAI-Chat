@@ -1,4 +1,5 @@
 from chat.client import create_openai_client
+from chat.chroma import create_rag_prompt
 from django.conf import settings
 import logging
 
@@ -20,11 +21,12 @@ def chat_with_openai_stream(message, model=None, max_tokens=1000):
     try:
         client = create_openai_client()
         model = model or settings.OPENAI_MODEL
+        prompt = create_rag_prompt(message)
         
         stream = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "user", "content": message}
+                {"role": "user", "content": prompt}
             ],
             max_tokens=max_tokens,
             temperature=0.7,
