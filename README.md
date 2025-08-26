@@ -1,6 +1,8 @@
-### Django React OpenAI Chat
+### Django React OpenAI Chat with RAG
 
 A chat app build with Django and React that calls the OpenAI API.
+
+It uses ChromaDB for the vector database for retrieval augmented generation (RAG).
 
 #### Set environment variables
 
