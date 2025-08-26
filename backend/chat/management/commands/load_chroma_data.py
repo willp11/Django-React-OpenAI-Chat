@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from chat.chroma import load_documents
+import os
 
 
 class Command(BaseCommand):
@@ -17,6 +18,34 @@ class Command(BaseCommand):
             type=str,
             help='Custom documents to load into the database',
         )
+        parser.add_argument(
+            '--file',
+            nargs='+',
+            type=str,
+            help='Path(s) to markdown files to load into the database',
+        )
+
+    def read_markdown_file(self, file_path):
+        """Read and return the content of a markdown file."""
+        try:
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"File not found: {file_path}")
+            
+            if not file_path.endswith('.md'):
+                self.stdout.write(
+                    self.style.WARNING(f'Skipping {file_path}: not a markdown file')
+                )
+                return None
+            
+            with open(file_path, 'r', encoding='utf-8') as file:
+                content = file.read()
+                return content.strip()
+                
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error reading file {file_path}: {str(e)}')
+            )
+            return None
 
     def handle(self, *args, **options):
         if options['sample']:
@@ -51,6 +80,31 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f'Successfully loaded {len(sample_docs)} sample documents')
             )
             
+        elif options['file']:
+            file_paths = options['file']
+            documents = []
+            
+            for file_path in file_paths:
+                content = self.read_markdown_file(file_path)
+                if content:
+                    documents.append(content)
+                    self.stdout.write(
+                        self.style.SUCCESS(f'Successfully read: {file_path}')
+                    )
+            
+            if documents:
+                self.stdout.write(
+                    self.style.SUCCESS(f'Loading {len(documents)} documents from files...')
+                )
+                load_documents(documents)
+                self.stdout.write(
+                    self.style.SUCCESS(f'Successfully loaded {len(documents)} documents from files')
+                )
+            else:
+                self.stdout.write(
+                    self.style.WARNING('No valid documents found to load')
+                )
+            
         elif options['documents']:
             custom_docs = options['documents']
             self.stdout.write(
@@ -64,9 +118,10 @@ class Command(BaseCommand):
         else:
             self.stdout.write(
                 self.style.WARNING(
-                    'No documents specified. Use --sample to load sample data or --documents to specify custom documents.'
+                    'No documents specified. Use --sample to load sample data, --documents to specify custom documents, or --file to specify markdown file paths.'
                 )
             )
             self.stdout.write('Example usage:')
             self.stdout.write('  python manage.py load_chroma_data --sample')
             self.stdout.write('  python manage.py load_chroma_data --documents "Document 1" "Document 2"')
+            self.stdout.write('  python manage.py load_chroma_data --file "path/to/file1.md" "path/to/file2.md"')

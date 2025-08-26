@@ -6,6 +6,7 @@
 # Database
 postgres_data/
 chroma_db/
+backend/chat/documents/
 
 # Python
 __pycache__/
