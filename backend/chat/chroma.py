@@ -37,7 +37,11 @@ def load_documents(documents: list[str]):
             )
 
 
-def create_rag_prompt(question, k=3):
+def create_rag_prompt(question, previous_messages, k=3):
+    if previous_messages:
+        previous_messages_text = "\n".join([f'{message.message}: {message.content}' for message in previous_messages])
+        question = f'{previous_messages_text}\n{question}'
+
     results = collection.query(
         query_texts=[question],
         n_results=k

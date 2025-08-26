@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def chat_with_openai_stream(message, model=None, max_tokens=1000):
+def chat_with_openai_stream(message, previous_messages=None, model=None, max_tokens=1000):
     """
     Stream a response from OpenAI's chat API
     
@@ -21,7 +21,7 @@ def chat_with_openai_stream(message, model=None, max_tokens=1000):
     try:
         client = create_openai_client()
         model = model or settings.OPENAI_MODEL
-        prompt = create_rag_prompt(message)
+        prompt = create_rag_prompt(message, previous_messages)
         
         stream = client.chat.completions.create(
             model=model,
@@ -30,7 +30,7 @@ def chat_with_openai_stream(message, model=None, max_tokens=1000):
             ],
             max_tokens=max_tokens,
             temperature=0.7,
-            stream=True  # Enable streaming
+            stream=True
         )
         
         for chunk in stream:

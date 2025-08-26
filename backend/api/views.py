@@ -24,6 +24,9 @@ def chat_stream(request, chat_id):
     """Streaming chat endpoint using Server-Sent Events"""
     message_text = request.data.get('message')
     chat = Chat.objects.get(id=chat_id)
+    previous_messages = ChatMessage.objects.filter(chat=chat)
+    previous_messages_text = '\n'.join([f'{message.message}: {message.content}' for message in previous_messages])
+    message_text = f'{previous_messages_text}\n{message_text}'
     chat_message = ChatMessage.objects.create(chat=chat, content='', message=message_text)
 
     if not message_text:
