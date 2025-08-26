@@ -27,6 +27,17 @@ def chunk_text(text, max_tokens=500, overlap=50):
     return chunks
 
 
+def load_documents(documents: list[str]):
+    for i, doc in enumerate(documents):
+        chunks = chunk_text(doc)
+        for j, chunk in enumerate(chunks):
+            collection.add(
+                documents=[chunk],
+                ids=[f"doc_{i}_chunk_{j}"],
+                metadatas=[{"source": f"doc_{i}"}]
+            )
+
+
 def query_rag(question, k=3):
     results = collection.query(
         query_texts=[question],

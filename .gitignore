@@ -5,6 +5,7 @@
 
 # Database
 postgres_data/
+chroma_db/
 
 # Python
 __pycache__/
